@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+
+# Environment variables
+.env
+.env.local
+
+# Frontend temporary uploads
+frontend/uploaded/
+frontend/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db

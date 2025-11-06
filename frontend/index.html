@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>디지털 인터랙티브 전시</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1>🎨 나만의 그림 전시관</h1>
+
+    <div class="camera-container">
+      <video id="video" autoplay playsinline></video>
+      <button id="capture-btn">📸 그림 찍기</button>
+    </div>
+
+    <div id="status" class="status hidden">
+      <div id="loading" class="loading hidden">
+        <p>잠시만 기다려주세요...<br>당신의 그림을 전시장에 보내는 중입니다 🪄</p>
+      </div>
+      <div id="result" class="result hidden">
+        <p id="result-text"></p>
+        <button id="retry-btn">다시 찍기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="camera.js"></script>
+</body>
+</html>
