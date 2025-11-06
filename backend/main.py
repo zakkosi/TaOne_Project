@@ -7,10 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from tripo_client import Tripo3DClient
-from vision_model import analyze_drawing_text
-from unity_receiver import send_to_unity
-from utils.image_cropper import crop_top_section
+from backend.tripo_client import Tripo3DClient
+from backend.vision_model import analyze_drawing_text
+from backend.unity_receiver import send_to_unity
+from Utils.image_cropper import crop_top_section
 
 # --------------------------------------------------------
 # ⚙️ Ngrok URL 자동 감지
@@ -137,7 +137,7 @@ async def analyze(file: UploadFile = File(...)):
         print(f"[Tripo3D] API 오류: {e}")
         task_id, result_url = "error", None
         # 8️⃣ Unity로 전송
-        
+
     payload = {
         "label": design,
         "child_name": child_name,
