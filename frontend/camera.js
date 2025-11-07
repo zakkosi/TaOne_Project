@@ -23,34 +23,47 @@ captureBtn.addEventListener("click", async () => {
   statusDiv.classList.remove("hidden");
   loadingDiv.classList.remove("hidden");
 
-  // 캔버스로 현재 프레임 캡처
   const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0);
-  const blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg"));
 
-  // 백엔드로 전송
+  // ✅ Blob 생성
+  const blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg"));
+  if (!blob) {
+    console.error("⚠️ Blob 생성 실패! 캔버스 캡처 문제 발생");
+    alert("이미지를 캡처하지 못했습니다. 다시 시도해주세요.");
+    captureBtn.disabled = false;
+    loadingDiv.classList.add("hidden");
+    return;
+  }
+
   const formData = new FormData();
   formData.append("file", blob, "drawing.jpg");
 
   try {
-    const response = await fetch("http://localhost:8000/analyze", {
+    // ✅ Ngrok에서도 호환되게 상대 경로로 호출
+    const response = await fetch("/analyze", {
       method: "POST",
       body: formData,
     });
 
+    if (!response.ok) {
+      throw new Error(`서버 응답 오류: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log("✅ 백엔드 응답:", data);
 
     loadingDiv.classList.add("hidden");
     resultDiv.classList.remove("hidden");
-    resultText.innerText = `✅ 분석 완료! 도안 종류: ${data.label}`;
+    resultText.innerText = `✅ 분석 완료! 도안: ${data.label}, 어린이: ${data.child_name}`;
   } catch (err) {
+    console.error("❌ 업로드 오류:", err);
     loadingDiv.classList.add("hidden");
     resultDiv.classList.remove("hidden");
     resultText.innerText = "❌ 오류가 발생했습니다. 다시 시도해주세요.";
-    console.error(err);
   }
 });
 
