@@ -58,6 +58,51 @@ class Tripo3DClient:
 
         return None
 
+    def image_to_model(
+        self,
+        image_token: str,
+        model_version: str = "v2.5-20250123",
+    ):
+        """
+        이미지에서 바로 3D 모델 생성
+        Args:
+            image_token: 업로드된 이미지의 image_token
+            model_version: 모델 버전
+        """
+        payload = {
+            "type": "image_to_model",
+            "file": {
+                "type": "png",
+                "file_token": image_token
+            },
+            "texture": True,
+            "pbr": True,
+            "model_version": model_version,
+        }
+
+        print(f"[TripoClient] image_to_model 요청 전송...")
+        print(f"[TripoClient] 요청 payload: {payload}")
+
+        try:
+            response = requests.post(
+                TRIPO_API_URL,
+                headers=self.headers,
+                json=payload,
+                timeout=30
+            )
+            print(f"[TripoClient] 응답 상태: {response.status_code}")
+            print(f"[TripoClient] 응답 내용: {response.text}")
+
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            print(f"[TripoClient] HTTP 오류: {e.response.status_code}")
+            print(f"[TripoClient] 오류 상세: {e.response.text}")
+            raise
+        except Exception as e:
+            print(f"[TripoClient] 예상치 못한 오류: {str(e)}")
+            raise
+
     def texture_existing_model(
         self,
         original_model_task_id: str,
@@ -151,16 +196,16 @@ class Tripo3DClient:
             print(f"[TripoClient] Task Status 조회 오류: {str(e)}")
             raise
 
-    async def wait_for_task_completion(self, task_id: str, max_wait: int = 600) -> str:
+    async def wait_for_task_completion(self, task_id: str, max_wait: int = 600) -> dict:
         """
-        Task 완료까지 대기하고 다운로드 URL 반환
+        Task 완료까지 대기하고 GLB URL 반환
 
         Args:
             task_id: 모니터링할 task ID
             max_wait: 최대 대기 시간 (초)
 
         Returns:
-            download_url (str) 또는 None
+            {"model_url": "..."} 또는 None
         """
         import time
         import asyncio
@@ -187,15 +232,26 @@ class Tripo3DClient:
                 if task_status == "success":
                     print(f"\n[TripoClient] ✅ Task {task_id} 완료!")
 
-                    # texture_model은 result.model.url 또는 output.model에서 URL을 가져옴
+                    # Task 타입에 따라 응답 구조가 다름:
+                    # texture_model: result.model.url 또는 output.model
+                    # image_to_model: result.pbr_model.url 또는 output.pbr_model
                     result = data.get("result", {})
-                    model_url = result.get("model", {}).get("url") or data.get("output", {}).get("model")
+                    output = data.get("output", {})
+
+                    model_url = (
+                        result.get("model", {}).get("url")       # texture_model
+                        or result.get("pbr_model", {}).get("url") # image_to_model
+                        or output.get("model")                    # texture_model fallback
+                        or output.get("pbr_model")                # image_to_model fallback
+                    )
 
                     if model_url:
                         print(f"[TripoClient] ✅ GLB 모델 URL: {model_url[:100]}...")
-                        return model_url
+                        return {"model_url": model_url}
                     else:
                         print(f"[TripoClient] ⚠️ 모델 URL을 찾을 수 없습니다")
+                        print(f"[TripoClient] result keys: {list(result.keys())}")
+                        print(f"[TripoClient] output keys: {list(output.keys())}")
                         return None
 
                 elif task_status in ["failed", "error"]:
